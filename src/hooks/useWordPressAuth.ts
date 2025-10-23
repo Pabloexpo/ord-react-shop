@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 
 const DOMAIN = "https://test.ordev.es";
+
+interface JWTPayload {
+  data: {
+    user: {
+      id: string;
+    };
+  };
+}
 
 interface User {
   id: number;
@@ -50,8 +59,12 @@ export const useWordPressAuth = () => {
 
       const data = await response.json();
       
+      // Decodificar el token JWT para obtener el user_id
+      const decoded = jwtDecode<JWTPayload>(data.token);
+      const userId = parseInt(decoded.data.user.id);
+      
       const userData: User = {
-        id: data.user_id || data.data?.id,
+        id: userId,
         username: data.user_nicename || data.user_display_name,
         email: data.user_email,
         name: data.user_display_name,

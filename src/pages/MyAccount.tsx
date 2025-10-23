@@ -25,13 +25,14 @@ const MyAccount = () => {
         const result = await fetchUserData(user.id, user.token);
         if (result.success) {
           setUserData(result.data);
+          console.log("User data fetched:", result.data);
         }
         setIsFetching(false);
       }
     };
 
     loadUserData();
-  }, [user, fetchUserData]);
+  }, []);
 
   const handleLogout = () => {
     logout();

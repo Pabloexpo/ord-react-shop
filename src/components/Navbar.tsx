@@ -73,7 +73,7 @@ const Navbar = () => {
               ))
             ) : (
               <>
-                <a href="#products" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <a href="/products" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Productos
                 </a>
                 <a href="#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
