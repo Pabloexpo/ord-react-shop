@@ -1,6 +1,9 @@
-import { ShoppingCart, Menu, Search } from "lucide-react";
+import { ShoppingCart, Menu, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { useWordPressAuth } from "@/hooks/useWordPressAuth";
+import LoginPopup from "./LoginPopup";
+import { useNavigate } from "react-router-dom";
 
 interface MenuItem {
   id: number;
@@ -14,6 +17,9 @@ const DOMAIN = "https://test.ordev.es";
 const Navbar = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const { user, isAuthenticated } = useWordPressAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -93,12 +99,34 @@ const Navbar = () => {
               0
             </span>
           </Button>
+
+          {isAuthenticated ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/account")}
+              title="Mi cuenta"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsLoginOpen(true)}
+              title="Iniciar sesión"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          )}
           
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
         </div>
       </div>
+
+      <LoginPopup isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </nav>
   );
 };
