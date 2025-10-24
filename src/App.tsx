@@ -7,25 +7,31 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
+import ProductDetail from "./pages/ProductDetail";
+import { CartProvider } from "@/context/CartContext"; // ✅ IMPORTANTE
+import { AuthProvider } from "@/context/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/account" element={<MyAccount />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider> {/* ✅ Nuevo */}
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/account" element={<MyAccount />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
-
 export default App;

@@ -36,7 +36,7 @@ const MyAccount = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    window.location.href = "/";
   };
 
   if (isLoading || !user) {
