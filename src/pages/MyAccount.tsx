@@ -3,21 +3,40 @@ import { useNavigate } from "react-router-dom";
 import { useWordPressAuth } from "@/hooks/useWordPressAuth";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
 const MyAccount = () => {
-  const { user, isLoading, logout, fetchUserData } = useWordPressAuth();
+  const { user, isLoading, logout, fetchUserData, updateUser } =
+    useWordPressAuth();
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Redirigir si no hay usuario logeado
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/");
     }
   }, [isLoading, user, navigate]);
 
+  // Cargar datos del usuario desde WP
   useEffect(() => {
     const loadUserData = async () => {
       if (user && user.id && user.id !== 0) {
@@ -25,6 +44,8 @@ const MyAccount = () => {
         const result = await fetchUserData(user.id, user.token);
         if (result.success) {
           setUserData(result.data);
+          setName(result.data.name || user.name);
+          setEmail(result.data.email || user.email);
           console.log("User data fetched:", result.data);
         }
         setIsFetching(false);
@@ -37,6 +58,36 @@ const MyAccount = () => {
   const handleLogout = () => {
     logout();
     window.location.href = "/";
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsUpdating(true);
+    setMessage(null);
+
+    const updates: any = {};
+    if (name !== user.name) updates.name = name;
+    if (email !== user.email) updates.email = email;
+    if (password) updates.password = password;
+
+    const result = await updateUser(updates);
+    if (result.success) {
+      setMessage({
+        type: "success",
+        text: "Datos actualizados correctamente ✅",
+      });
+      setPassword("");
+      setUserData(result.user);
+    } else {
+      setMessage({
+        type: "error",
+        text: result.error || "Error al actualizar los datos",
+      });
+    }
+
+    setIsUpdating(false);
   };
 
   if (isLoading || !user) {
@@ -77,45 +128,145 @@ const MyAccount = () => {
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-4xl font-bold text-foreground">Mi Cuenta</h1>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Información de la cuenta</CardTitle>
-              <CardDescription>Detalles de tu perfil</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isFetching ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <p className="text-sm text-muted-foreground">ID de usuario</p>
-                    <p className="font-medium">{user.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Nombre</p>
-                    <p className="font-medium">{userData?.name || user.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Usuario</p>
-                    <p className="font-medium">{user.username}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{userData?.email || user.email}</p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+        <div className="max-w-5xl mx-auto space-y-10">
+          {/* Título principal */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              Mi Cuenta
+            </h1>
+            <p className="text-muted-foreground">
+              Gestiona tu perfil, actualiza tus datos o cierra sesión.
+            </p>
+          </div>
 
-          <Button onClick={handleLogout} variant="destructive" className="w-full">
-            Cerrar Sesión
-          </Button>
+          {/* Grid principal */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Información de la cuenta */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Información de la cuenta</CardTitle>
+                <CardDescription>
+                  Detalles actuales de tu usuario
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isFetching ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        ID de usuario
+                      </p>
+                      <p className="font-medium">{user.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Usuario</p>
+                      <p className="font-medium">{user.username}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nombre</p>
+                      <p className="font-medium">
+                        {userData?.name || user.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">
+                        {userData?.email || user.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Formulario de edición */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Editar perfil</CardTitle>
+                <CardDescription>
+                  Actualiza tus datos personales
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdate} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground block mb-1">
+                        Nombre
+                      </label>
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Tu nombre"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-muted-foreground block mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Tu correo electrónico"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-muted-foreground block mb-1">
+                        Contraseña (opcional)
+                      </label>
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Nueva contraseña"
+                      />
+                    </div>
+                  </div>
+
+                  {message && (
+                    <p
+                      className={`text-sm ${
+                        message.type === "success"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {message.text}
+                    </p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isUpdating}
+                  >
+                    {isUpdating && (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    )}
+                    Guardar cambios
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Botón de cerrar sesión */}
+          <div className="flex justify-center pt-6">
+            <Button
+              onClick={handleLogout}
+              variant="destructive"
+              className="w-full md:w-1/3"
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
       </div>
     </>

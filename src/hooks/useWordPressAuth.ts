@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
-
 const DOMAIN = "https://test.ordev.es";
 
 interface JWTPayload {
@@ -41,6 +40,8 @@ export const useWordPressAuth = () => {
     }
     setIsLoading(false);
   }, []);
+
+  //LOGIN
 
   const login = async (username: string, password: string) => {
     try {
@@ -92,6 +93,8 @@ export const useWordPressAuth = () => {
     }
   };
 
+  //REGISTRO
+
   const register = async (
     username: string,
     email: string,
@@ -120,12 +123,15 @@ export const useWordPressAuth = () => {
     }
   };
 
+  //CERRAR SESIÓN
+
   const logout = () => {
     localStorage.removeItem("wp_user");
     localStorage.removeItem("wp_token");
     setUser(null);
   };
 
+  //OBTENER DATOS DEL USUARIO
   const fetchUserData = async (userId: number, token: string) => {
     try {
       // Usar el ID del usuario directamente en lugar de /me
@@ -147,6 +153,43 @@ export const useWordPressAuth = () => {
     }
   };
 
+  //ACTUALIZAR DATOS DEL USUARIO
+  const updateUser = async (updates: {
+    name?: string;
+    email?: string;
+    password?: string;
+  }) => {
+    if (!user || !user.token)
+      return { success: false, error: "Usuario no autenticado" };
+
+    try {
+      const response = await fetch(`${DOMAIN}/wp-json/custom/v1/update-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al actualizar los datos");
+      }
+
+      // Actualizar user localmente si se cambió el nombre o email
+      const updatedUser = { ...user, ...data.user };
+      setUser(updatedUser);
+      localStorage.setItem("wp_user", JSON.stringify(updatedUser));
+
+      return { success: true, user: updatedUser };
+    } catch (error: any) {
+      console.error("Update user error:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     user,
     isLoading,
@@ -154,6 +197,7 @@ export const useWordPressAuth = () => {
     register,
     logout,
     fetchUserData,
+    updateUser, // 👈 exporta esta
     isAuthenticated: !!user,
   };
 };
