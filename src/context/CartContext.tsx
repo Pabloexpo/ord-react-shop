@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useWordPressAuth } from "@/hooks/useWordPressAuth";
 
 export interface CartItem {
   id: number;
@@ -20,10 +21,12 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const { user, DOMAIN } = useWordPressAuth();
 
   useEffect(() => {
     const storedCart = localStorage.getItem("cart");
@@ -86,6 +89,49 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         item.id === productId ? { ...item, quantity } : item
       )
     );
+  };
+  const createOrder = async (paymentMethod: string = "cod") => {
+    if (!user?.token) {
+      return {
+        success: false,
+        error: "Debes iniciar sesión para realizar el pedido.",
+      };
+    }
+
+    if (items.length === 0) {
+      return { success: false, error: "El carrito está vacío." };
+    }
+
+    try {
+      const orderData = {
+        items: items.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+        })),
+        payment_method: paymentMethod,
+      };
+
+      const response = await fetch(`${DOMAIN}/wp-json/custom/v1/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al crear el pedido");
+      }
+
+      clearCart(); // ✅ Limpiar carrito tras éxito
+      return { success: true, orderId: data.order_id };
+    } catch (error: any) {
+      console.error("Error al crear el pedido:", error);
+      return { success: false, error: error.message };
+    }
   };
 
   const clearCart = () => setItems([]);

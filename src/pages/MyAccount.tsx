@@ -20,6 +20,7 @@ const MyAccount = () => {
   const [userData, setUserData] = useState<any>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const DOMAIN = "https://test.ordev.es";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,6 +29,9 @@ const MyAccount = () => {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  // variables para los pedidos del usuario
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   // Redirigir si no hay usuario logeado
   useEffect(() => {
@@ -54,6 +58,36 @@ const MyAccount = () => {
 
     loadUserData();
   }, []);
+
+  // UseEffect para cargar los pedidos del usuario
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (user?.token) {
+        setIsLoadingOrders(true);
+        try {
+          const response = await fetch(`${DOMAIN}/wp-json/custom/v1/orders`, {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al cargar pedidos");
+          }
+
+          const data = await response.json();
+          setOrders(data);
+          console.log("Orders fetched:", data);
+        } catch (error) {
+          console.error("Fetch orders error:", error);
+        } finally {
+          setIsLoadingOrders(false);
+        }
+      }
+    };
+
+    loadOrders();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -256,6 +290,44 @@ const MyAccount = () => {
               </CardContent>
             </Card>
           </div>
+          {/* Historial de pedidos */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+            <CardHeader>
+              <CardTitle>Mis Pedidos</CardTitle>
+              <CardDescription>Historial de tus compras</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingOrders ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between hover:bg-muted/50 transition-colors"
+                    >
+                      <div>
+                        <p className="font-semibold">Pedido #{order.id}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {order.date} — {order.status}
+                        </p>
+                      </div>
+                      <p
+                        className="font-medium text-right"
+                        dangerouslySetInnerHTML={{ __html: order.total }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-6">
+                  No tienes pedidos todavía.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Botón de cerrar sesión */}
           <div className="flex justify-center pt-6">

@@ -22,6 +22,7 @@ interface User {
 export const useWordPressAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const DOMAIN = "https://test.ordev.es";
 
   useEffect(() => {
     // Verificar si hay un usuario guardado en localStorage
@@ -199,5 +200,6 @@ export const useWordPressAuth = () => {
     fetchUserData,
     updateUser, // 👈 exporta esta
     isAuthenticated: !!user,
+    DOMAIN
   };
 };

@@ -10,12 +10,12 @@ import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
- const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { totalItems } = useCart();
 
   //Renderizamos el componente cuando hay login
-  useEffect(()=>{}, [isAuthenticated]);
+  useEffect(() => {}, [isAuthenticated]);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-lg">
